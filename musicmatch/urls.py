@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
-from musicapp.views import UserViewSet, ProfileViewSet, GenreViewSet, InstrumentViewSet
+from musicapp.views import *
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
@@ -25,10 +25,12 @@ router.register('users', UserViewSet)
 router.register('profiles', ProfileViewSet)
 router.register('genres', GenreViewSet)
 router.register('instruments', InstrumentViewSet)
+router.register('user_instruments', UserInstrumentViewSet)
+router.register('user_genres', UserGenreViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path('auth/', obtain_auth_token),
     path('', include('pwa.urls')),
-    path('token/', obtain_auth_token),
 ]

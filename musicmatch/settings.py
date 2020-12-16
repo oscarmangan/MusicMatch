@@ -57,6 +57,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'musicmatch.urls'
 
+# Whitelist location of front-end (React)
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000'
+]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -120,12 +125,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-# Whitelist location of front-end (React)
-CORS_ORIGIN_WHITELIST = [
-    'https://localhost:3000'
-]
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
