@@ -6,15 +6,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Model for profile, 1-to-1 relationship with User model/entity
 class Profile(models.Model):
-    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.CharField(max_length=400, null=True, default=None)
-    phone = models.IntegerField(null=True, default=None)
     age = models.IntegerField(null=True, default=None, validators=[MinValueValidator(13)])
     band_exp = models.IntegerField(null=False, default=None, validators=[MinValueValidator(0)])
-    location = models.CharField(max_length=40, null=False, default=None)
-    facebook_url = models.URLField(max_length=100, null=True, default=None)
-    twitter_url = models.URLField(max_length=100, null=True, default=None)
-    instagram_url = models.URLField(max_length=100, null=True, default=None)
+    town = models.CharField(max_length=40, null=True, default=None)
+    facebook_url = models.URLField(max_length=100, null=True, blank=True, default=None)
+    twitter_url = models.URLField(max_length=100, null=True, blank=True, default=None)
+    instagram_url = models.URLField(max_length=100, null=True, blank=True, default=None)
     lat_long = models.PointField(
         editable=False,
         blank=True,
@@ -48,7 +47,7 @@ class Genre(models.Model):
 class UserInstrument(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
-    experience_level = models.CharField('instrument_exp', max_length=30, default=None)
+    experience_level = models.IntegerField('instrument_exp', null=False, default=None)
 
     class Meta:
         unique_together = (('user', 'instrument'),)
@@ -68,4 +67,4 @@ class UserGenre(models.Model):
 # Model for UserImages where each users profile stores a maximum of 3 images for profile display
 class UserImage(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    image_file = models.ImageField(null=True, blank=True, upload_to="userImages/")
+    image_file = models.ImageField(null=True, blank=True, upload_to="user_images/")

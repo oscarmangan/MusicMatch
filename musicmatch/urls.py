@@ -27,6 +27,7 @@ router.register('genres', GenreViewSet)
 router.register('instruments', InstrumentViewSet)
 router.register('user_instruments', UserInstrumentViewSet)
 router.register('user_genres', UserGenreViewSet)
+router.register('user_images', UserImageViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
