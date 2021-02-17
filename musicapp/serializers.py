@@ -6,90 +6,20 @@ from musicapp.models import Genre, Instrument, Profile, UserGenre, UserInstrumen
 from rest_framework.authtoken.models import Token
 
 
-class ProfileSerializer(serializers.HyperlinkedModelSerializer):
+# Serializer for User class, returning ID, username and email
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password')
+        extra_kwargs = {'password': {'write_only': True, 'required': True}}
 
+
+class ProfileSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Profile
         fields = ('bio', 'age', 'band_exp',
-                  'facebook_url', 'twitter_url', 'instagram_url',
-                  'town', 'lat_long')
-
-
-# Serializer for User class, returning ID, username, email and superuser status
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-
-    profile = ProfileSerializer(required=True)
-
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'password', 'profile',)
-        extra_kwargs = {'password': {'write_only': True, 'required': True}}
-
-    # Create a new user
-    def create(self, validated_data):
-
-        # Create a new User model with the authentication data
-        profile_data = validated_data.pop('profile')
-        user = User.objects.create(**validated_data)
-        user.set_password(validated_data['password'])
-        user.save()
-        Token.objects.create(user=user)
-
-        # Create the profile to coincide with the new User
-        print(profile_data)
-        profile = Profile.objects.create(
-            user=user,
-            **profile_data
-        )
-
-        # Create the UserGenre rows to coincide with the new User
-        # genre_data = validated_data.pop('genres')
-        # Create the UserInstrument rows to coincide with the new User
-        # instrument_data = validated_data.pop('instruments')
-        # Create the UserImage rows to coincide with the new User
-        # image_data = validated_data.pop('images')
-
-        return user
-
-        # # Create a row in the link table for each genre attached in the request to the user
-        # for gen in validated_data['genres']:
-        #     user_genre = UserGenre.objects.create(
-        #         user=user,
-        #         genre=gen
-        #     )
-        #
-        # # Create a row in the link table for each instrument and experience level
-        # for ins in validated_data['instruments']:
-        #     user_instrument = UserInstrument.objects.create(
-        #         user=user,
-        #         instrument=ins.name,
-        #         experience_level=ins.exp
-        #     )
-        #
-        # # Create a row in the link table for each image uploaded
-        # for img in validated_data['images']:
-        #     if img is not None:
-        #         user_image = UserImage.objects.create(
-        #             user=user,
-        #             image=img
-        #
-
-    # def create(self, validated_data):
-    #
-    #     username = validated_data['user']
-    #     profile = Profile.objects.create(
-    #         user=User.objects.get(username=username),
-    #         bio=validated_data['bio'],
-    #         age=validated_data['age'],
-    #         band_exp=validated_data['band_exp'],
-    #         facebook_url=validated_data['facebook'],
-    #         twitter_url=validated_data['twitter'],
-    #         instagram_url=validated_data['instagram'],
-    #         town=validated_data['town'],
-    #         lat_long=validated_data['lat_long']
-    #     )
-    #
-    #     return profile
+                  'facebook_url', 'twitter_url', 'instagram_url', 'music_url',
+                  'town', 'lat_long', 'distance_limit',)
 
 
 # Serializer for Genre class, returning ID and genre name
@@ -107,7 +37,9 @@ class InstrumentSerializer(serializers.HyperlinkedModelSerializer):
 
 
 # Serializer for UserGenre class, this class holds each genre associated to each user
-class UserGenreSerializer(serializers.HyperlinkedModelSerializer):
+class UserGenreSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = UserGenre
         fields = ('user', 'genre')
@@ -126,3 +58,78 @@ class UserImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = UserImage
         fields = ('user', 'image')
+
+
+class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
+
+    profile = ProfileSerializer(required=True)
+    genres = UserGenreSerializer(required=True, many=True)
+    # instruments = UserInstrumentSerializer(required=True, many=True)
+    # images = UserImageSerializer(required=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password', 'profile', 'genres')
+        extra_kwargs = {'password': {'write_only': True, 'required': True}}
+
+    User = get_user_model()
+
+    # Create a new user
+    def create(self, validated_data):
+        # Separate the JSON data into individual objects
+        print(validated_data)
+        profile_data = validated_data.pop('profile')
+        genres_data = validated_data.pop('genres')
+        # instruments_data = validated_data.pop('instruments')
+        # images_data = validated_data.pop('images')
+
+        # Create the User object
+        user = User()
+        user.email = validated_data['email']
+        user.username = validated_data['username']
+        user.set_password(raw_password=validated_data['password'])
+        user.is_superuser = "0"
+        user.is_staff = "0"
+        user.save()
+        Token.objects.create(user=user)
+
+        # Handling coordinates from the data
+        coords = profile_data['lat_long'].split(",")
+        new_coords = [float(part) for part in coords]
+        point = Point(new_coords, srid=4326)
+
+        # Create the profile to coincide with the new User
+        profile = Profile.objects.create(
+            user=user,
+            band_exp=profile_data['band_exp'],
+            age=profile_data['age'],
+            lat_long=point,
+            bio=profile_data['bio'],
+            town=profile_data['town'],
+            distance_limit=profile_data['distance_limit'],
+            music_url=profile_data['music_url'],
+            twitter_url=profile_data['twitter_url'],
+            instagram_url=profile_data['instagram_url'],
+            facebook_url=profile_data['facebook_url'],
+        )
+
+        # Loop through all of the genres passed and create a UserGenre object for each
+        for i in genres_data:
+            value = i['genre']
+            genres = UserGenre.objects.create(
+                user=user,
+                genre=value
+            )
+
+        # for i in instruments_data:
+        #     ins_name = instruments_data[i]['instrument']
+        #     instrument = Instrument.objects.get(instrument_name=ins_name)
+        #     exp = int(instruments_data[i]['exp'])
+        #     instruments = UserInstrument.objects.create(
+        #         user=user,
+        #         instrument=instrument,
+        #         experience_level=exp
+        #     )
+
+        return user
+

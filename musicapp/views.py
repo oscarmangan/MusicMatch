@@ -5,19 +5,26 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from musicapp.serializers import *
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from musicapp.models import Profile, Instrument, Genre, UserInstrument, UserGenre
+from rest_framework.authtoken.models import Token
 
 
 # ViewSets for all model serializers below
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
+    authentication_classes = (TokenAuthentication, )
 
-    # POST request to userViewSet where we create a new account
+
+class CreateUserViewSet(viewsets.ModelViewSet):
+    serializer_class = CreateUserSerializer
+    queryset = User.objects.all()
+
+    # POST request to CreateUserViewSet where we create a new account
     @csrf_exempt
-    def register(self, request):
-
-        serializer = UserSerializer(data=request.data)
+    def create(self, request, *args, **kwargs):
+        serializer = CreateUserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "User created successfully"}, status=status.HTTP_201_CREATED)
@@ -58,4 +65,3 @@ class UserImageViewSet(viewsets.ModelViewSet):
     serializer_class = UserImageSerializer
     queryset = UserImage.objects.all()
     authentication_classes = (TokenAuthentication,)
-

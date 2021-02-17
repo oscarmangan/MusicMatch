@@ -1,6 +1,6 @@
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
-from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 
@@ -10,12 +10,13 @@ class Profile(models.Model):
     bio = models.CharField(max_length=400, null=True, default=None)
     age = models.IntegerField(null=True, default=None, validators=[MinValueValidator(13)])
     band_exp = models.IntegerField(null=False, default=None, validators=[MinValueValidator(0)])
+    distance_limit = models.IntegerField(null=False, default=50, validators=[MinValueValidator(1), MaxValueValidator(100)])
     town = models.CharField(max_length=40, null=True, default=None)
+    music_url = models.URLField(max_length=100, null=True, blank=True, default=None)
     facebook_url = models.URLField(max_length=100, null=True, blank=True, default=None)
     twitter_url = models.URLField(max_length=100, null=True, blank=True, default=None)
     instagram_url = models.URLField(max_length=100, null=True, blank=True, default=None)
     lat_long = models.PointField(
-        editable=False,
         blank=True,
         null=True,
         default=None,

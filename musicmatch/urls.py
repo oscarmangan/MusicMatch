@@ -22,6 +22,7 @@ from musicapp.views import *
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
 router.register('users', UserViewSet)
+router.register('signup', CreateUserViewSet)
 router.register('profiles', ProfileViewSet)
 router.register('genres', GenreViewSet)
 router.register('instruments', InstrumentViewSet)
