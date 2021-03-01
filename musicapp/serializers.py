@@ -17,7 +17,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class ProfileSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Profile
-        fields = ('bio', 'age', 'band_exp',
+        fields = ('user_id', 'bio', 'age', 'band_exp',
                   'facebook_url', 'twitter_url', 'instagram_url', 'music_url',
                   'town', 'lat_long', 'distance_limit',)
 
@@ -47,29 +47,54 @@ class UserGenreSerializer(serializers.ModelSerializer):
 
 # Serializer for UserInstrument class, this class holds each instrument played by each user
 # also holding the level of exp (in years) for that combination
-class UserInstrumentSerializer(serializers.HyperlinkedModelSerializer):
+class UserInstrumentSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = UserInstrument
         fields = ('user', 'instrument', 'experience_level')
 
 
 # Serializer for UserImage class, this class holds each users image uploaded
-class UserImageSerializer(serializers.HyperlinkedModelSerializer):
+class UserImageSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = UserImage
-        fields = ('user', 'image')
+        fields = ('user', 'image_file')
+
+
+# Serializer for the creation of one or multiple UserImage models for photo uploading
+class CreateUserImageSerializer(serializers.ModelSerializer):
+    images = UserImageSerializer(required=True, many=True)
+
+    class Meta:
+        model = UserImage
+        fields = ('user', 'images')
+
+    def create(self, validated_data):
+        images_data = validated_data.pop('images')
+        user = validated_data['user']
+        for i in images_data:
+            value = i['image_file']
+            UserImage.objects.create(
+                user=user,
+                image_file=value
+            )
+
+        return user
 
 
 class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
 
     profile = ProfileSerializer(required=True)
     genres = UserGenreSerializer(required=True, many=True)
-    # instruments = UserInstrumentSerializer(required=True, many=True)
-    # images = UserImageSerializer(required=True, many=True)
+    instruments = UserInstrumentSerializer(required=True, many=True)
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'profile', 'genres')
+        fields = ('id', 'username', 'email', 'password', 'profile',
+                  'genres', 'instruments')
         extra_kwargs = {'password': {'write_only': True, 'required': True}}
 
     User = get_user_model()
@@ -77,11 +102,9 @@ class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
     # Create a new user
     def create(self, validated_data):
         # Separate the JSON data into individual objects
-        print(validated_data)
         profile_data = validated_data.pop('profile')
         genres_data = validated_data.pop('genres')
-        # instruments_data = validated_data.pop('instruments')
-        # images_data = validated_data.pop('images')
+        instruments_data = validated_data.pop('instruments')
 
         # Create the User object
         user = User()
@@ -112,6 +135,7 @@ class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
             instagram_url=profile_data['instagram_url'],
             facebook_url=profile_data['facebook_url'],
         )
+        profile.save()
 
         # Loop through all of the genres passed and create a UserGenre object for each
         for i in genres_data:
@@ -120,16 +144,18 @@ class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
                 user=user,
                 genre=value
             )
+            genres.save()
 
-        # for i in instruments_data:
-        #     ins_name = instruments_data[i]['instrument']
-        #     instrument = Instrument.objects.get(instrument_name=ins_name)
-        #     exp = int(instruments_data[i]['exp'])
-        #     instruments = UserInstrument.objects.create(
-        #         user=user,
-        #         instrument=instrument,
-        #         experience_level=exp
-        #     )
+        # Loop through all of the instruments passed and create a UserInstrument object for each
+        for i in instruments_data:
+            instrument = i['instrument']
+            exp_lvl = i['experience_level']
+            instruments = UserInstrument.objects.create(
+                user=user,
+                instrument=instrument,
+                experience_level=exp_lvl
+            )
+            instruments.save()
 
         return user
 

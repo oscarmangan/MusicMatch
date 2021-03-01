@@ -23,6 +23,7 @@ from musicapp.views import *
 router = routers.DefaultRouter()
 router.register('users', UserViewSet)
 router.register('signup', CreateUserViewSet)
+router.register('upload_images', CreateUserImageViewSet)
 router.register('profiles', ProfileViewSet)
 router.register('genres', GenreViewSet)
 router.register('instruments', InstrumentViewSet)
@@ -34,5 +35,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('auth/', obtain_auth_token),
+    path('check_user/', CheckUserExists.as_view(), name='check_user'),
     path('', include('pwa.urls')),
 ]
