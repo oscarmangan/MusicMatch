@@ -72,3 +72,15 @@ def upload_path(instance, filename):
 class UserImage(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     image_file = models.ImageField(null=True, blank=True, upload_to=upload_path)
+
+
+# Model for UserRecommendations where we store a row for each user along with the other user IDs they have been recommended
+class UserRecommendation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='thisuser')
+    recommendation = models.ForeignKey(User, on_delete=models.CASCADE)
+    distance_from_user = models.FloatField('distance_from_user', null=False, default=0)
+    score = models.FloatField('rec_score', null=False, default=0)
+
+    class Meta:
+        unique_together = (('user', 'recommendation'),)
+        index_together = (('user', 'recommendation'),)
