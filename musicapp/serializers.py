@@ -2,24 +2,52 @@ from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from musicapp.models import Genre, Instrument, Profile, UserGenre, UserInstrument, UserImage
+from musicapp.models import Genre, Instrument, Profile, UserGenre, UserInstrument, UserImage, UserRecommendation
 from rest_framework.authtoken.models import Token
 
 
-# Serializer for User class, returning ID, username and email
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'password')
-        extra_kwargs = {'password': {'write_only': True, 'required': True}}
+# Custom RelationField class to get the url of the images without needing the entire UserImageSerializer
+class ImageListingField(serializers.RelatedField):
+
+    def to_representation(self, value):
+        return value.image_file.url
 
 
+class InstrumentListingField(serializers.RelatedField):
+
+    def to_representation(self, value):
+        data = {"instrument": value.instrument.instrument_name, "exp": value.experience_level}
+        return data
+
+
+class GenreListingField(serializers.RelatedField):
+
+    def to_representation(self, value):
+        return value.genre.genre_name
+
+
+# Serializer for Profile class
 class ProfileSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Profile
         fields = ('user_id', 'bio', 'age', 'band_exp',
                   'facebook_url', 'twitter_url', 'instagram_url', 'music_url',
                   'town', 'lat_long', 'distance_limit',)
+
+
+# Serializer for User class, returning ID, username and email
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+
+    images = ImageListingField(many=True, read_only=True)
+    instruments = InstrumentListingField(many=True, read_only=True)
+    genres = GenreListingField(many=True, read_only=True)
+    profile = ProfileSerializer()
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password', 'images', 'profile',
+                  'instruments', 'genres')
+        extra_kwargs = {'password': {'write_only': True, 'required': True}}
 
 
 # Serializer for Genre class, returning ID and genre name
@@ -85,6 +113,7 @@ class CreateUserImageSerializer(serializers.ModelSerializer):
         return user
 
 
+# Serializer for creating a user with multiple other model instances created
 class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
 
     profile = ProfileSerializer(required=True)
@@ -158,4 +187,14 @@ class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
             instruments.save()
 
         return user
+
+
+# Serializer for the UserRecommendation model
+class UserRecommendationsSerializer(serializers.ModelSerializer):
+
+    recommendation = UserSerializer()
+
+    class Meta:
+        model = UserRecommendation
+        fields = ('user', 'recommendation', 'distance_from_user', 'score')
 

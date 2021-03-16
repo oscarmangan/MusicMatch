@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from musicapp.serializers import *
 from django.contrib.auth.models import User
-from musicapp.models import Profile, Instrument, Genre, UserInstrument, UserGenre
+from musicapp.models import Profile, Instrument, Genre, UserInstrument, UserGenre, UserRecommendation
+import musicapp.recommenderSystem as rs
 
 
 # ViewSets for all model serializers below
@@ -86,6 +87,8 @@ class CreateUserImageViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# View class used to check if the username or email entered by the user in the first
+# registration step has already been taken in the database
 class CheckUserExists(APIView):
 
     # Function to check if the username or email input by the user exists in registration
@@ -107,3 +110,39 @@ class CheckUserExists(APIView):
         except Exception as e:
             return Response({'message': str(e)}, status=400)
 
+
+# View to take the users ID and set their recommendations based on their profile
+class SetUserRecommendationsView(APIView):
+
+    @csrf_exempt
+    def post(self, request, *args, **kwargs):
+        try:
+            print(request.data)
+            user_id = request.data['user_id']
+            # ensuring the users ID exists in the database before executing
+            if User.objects.filter(id=user_id).exists():
+                rs.dataPreProcessing(user_id)
+                return Response({"status": "User recommendations generated"}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'message': "User not found"}, status=404)
+        except Exception as e:
+            return Response({'message': str(e)}, status=400)
+
+
+# View class to get the recommendations for the user through serializer to display
+class GetUserRecommendationsView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        user_id = request.GET['id']
+        limit = request.GET['limit']
+        try:
+            user = User.objects.get(id=user_id)
+            # if the limit param is true, then we only want the first 9 recommendations
+            if limit == "true":
+                rec_list = UserRecommendation.objects.filter(user=user)[:9]
+            else:
+                rec_list = UserRecommendation.objects.filter(user=user)
+            serializer = UserRecommendationsSerializer(rec_list, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'message': str(e)}, status=400)

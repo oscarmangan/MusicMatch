@@ -45,7 +45,7 @@ class Genre(models.Model):
 
 # Model for UserInstruments (link table between User and Instruments)
 class UserInstrument(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="instruments")
     instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
     experience_level = models.IntegerField('instrument_exp', null=False, default=None)
 
@@ -56,7 +56,7 @@ class UserInstrument(models.Model):
 
 # Model for UserGenre (link table between User and genres)
 class UserGenre(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="genres")
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
     class Meta:
@@ -70,7 +70,7 @@ def upload_path(instance, filename):
 
 # Model for UserImages where each users profile stores a maximum of 3 images for profile display
 class UserImage(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="images")
     image_file = models.ImageField(null=True, blank=True, upload_to=upload_path)
 
 
