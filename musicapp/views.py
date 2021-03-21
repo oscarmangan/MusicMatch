@@ -1,6 +1,8 @@
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from musicapp.serializers import *
@@ -16,6 +18,7 @@ class UserViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication, )
 
 
+# ViewSet for creating a new user instance
 class CreateUserViewSet(viewsets.ModelViewSet):
     serializer_class = CreateUserSerializer
     queryset = User.objects.all()
@@ -23,7 +26,7 @@ class CreateUserViewSet(viewsets.ModelViewSet):
     # POST request to CreateUserViewSet where we create a new account
     @csrf_exempt
     def create(self, request, *args, **kwargs):
-        serializer = CreateUserSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "User created successfully",
@@ -65,6 +68,14 @@ class UserImageViewSet(viewsets.ModelViewSet):
     serializer_class = UserImageSerializer
     queryset = UserImage.objects.all()
     authentication_classes = (TokenAuthentication,)
+
+
+# Custom view to return the users ID along with their token when they log in
+class CustomObtainAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
+        token = Token.objects.get(key=response.data['token'])
+        return Response({'token': token.key, 'id': token.user_id})
 
 
 class CreateUserImageViewSet(viewsets.ModelViewSet):
@@ -146,3 +157,16 @@ class GetUserRecommendationsView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'message': str(e)}, status=400)
+
+
+# View to allow the user to update multiple models related to the user at once
+class UpdateUserView(APIView):
+
+    # patch request as the user only updates part of the overall collection of models
+    def patch(self, request):
+        user = User.objects.get(id=request.data['user_id'])
+        serializer = UpdateUserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "User updated successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -189,6 +189,72 @@ class CreateUserSerializer(serializers.HyperlinkedModelSerializer):
         return user
 
 
+# Update the users profile serializer
+class UpdateUserSerializer(serializers.HyperlinkedModelSerializer):
+
+    profile = ProfileSerializer(required=True)
+    genres = UserGenreSerializer(required=True, many=True)
+    instruments = UserInstrumentSerializer(required=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password', 'profile',
+                  'genres', 'instruments')
+        extra_kwargs = {'password': {'write_only': True, 'required': True}}
+
+    def update(self, instance, validated_data):
+        print(validated_data)
+        # checking if the profile object is in the request passed to the view
+        if 'profile' in validated_data:
+            profile_data = validated_data.pop('profile')
+            profile = instance.profile
+
+            # set the new values for each possible updatable field
+            profile.bio = profile_data.get('bio', profile.bio)
+            profile.age = profile_data.get('age', profile.age)
+            profile.facebook_url = profile_data.get('facebook_url', profile.facebook_url)
+            profile.twitter_url = profile_data.get('twitter_url', profile.twitter_url)
+            profile.instagram_url = profile_data.get('instagram_url', profile.instagram_url)
+            profile.music_url = profile_data.get('music_url', profile.music_url)
+            profile.town = profile_data.get('town', profile.town)
+            profile.distance_limit = profile_data.get('distance_limit', profile.distance_limit)
+            profile.save()
+            print(profile_data)
+
+        # checking that instruments array was passed in the request
+        if 'instruments' in validated_data:
+            instruments_data = validated_data.pop('instruments')
+
+            # delete all previous entries of instruments for this user
+            UserInstrument.objects.filter(user=instance).delete()
+
+            # create the one or many new UserInstrument objects
+            for i in instruments_data:
+                instruments = UserInstrument.objects.create(
+                    user=instance,
+                    instrument=i['instrument'],
+                    experience_level=i['experience_level']
+                )
+                instruments.save()
+
+        # checking that genres array was passed in the request
+        if 'genres' in validated_data:
+            genres_data = validated_data.pop('genres')
+
+            # delete all previous entries of genres for this user
+            UserGenre.objects.filter(user=instance).delete()
+
+            # Loop through all of the genres passed and create a UserGenre object for each
+            for i in genres_data:
+                genres = UserGenre.objects.create(
+                    user=instance,
+                    genre=i['genre']
+                )
+                genres.save()
+
+        return instance
+
+
 # Serializer for the UserRecommendation model
 class UserRecommendationsSerializer(serializers.ModelSerializer):
 

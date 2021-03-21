@@ -36,9 +36,10 @@ router.register('user_images', UserImageViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('auth/', obtain_auth_token),
+    path('auth/', CustomObtainAuthToken.as_view(), name='login'),
     path('check_user/', CheckUserExists.as_view(), name='check_user'),
     path('set_recommendations/', SetUserRecommendationsView.as_view(), name='set_recommendations'),
     path('get_recommendations/', GetUserRecommendationsView.as_view(), name='get_recommendations'),
+    path('update_user/', UpdateUserView.as_view(), name='update_user'),
     path('', include('pwa.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
