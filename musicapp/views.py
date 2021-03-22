@@ -26,7 +26,7 @@ class CreateUserViewSet(viewsets.ModelViewSet):
     # POST request to CreateUserViewSet where we create a new account
     @csrf_exempt
     def create(self, request, *args, **kwargs):
-        serializer = UserSerializer(data=request.data)
+        serializer = CreateUserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "User created successfully",
@@ -128,7 +128,6 @@ class SetUserRecommendationsView(APIView):
     @csrf_exempt
     def post(self, request, *args, **kwargs):
         try:
-            print(request.data)
             user_id = request.data['user_id']
             # ensuring the users ID exists in the database before executing
             if User.objects.filter(id=user_id).exists():

@@ -37,7 +37,7 @@ def dataPreProcessing(user_id):
 
         # If the user is within the location threshold, then get this users instruments,
         # instrument experience, band experience and genres and add them to the DataFrame
-        if distance_between_users <= loc_limit:
+        if distance_between_users <= loc_limit and distance_between_users <= value.distance_limit:
             index_counter += 1
             user_instruments = UserInstrument.objects.filter(user=value.user)
             user_genres = UserGenre.objects.filter(user=value.user)

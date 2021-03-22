@@ -16,14 +16,15 @@ class ImageListingField(serializers.RelatedField):
 class InstrumentListingField(serializers.RelatedField):
 
     def to_representation(self, value):
-        data = {"instrument": value.instrument.instrument_name, "exp": value.experience_level}
+        data = {"instrument": value.instrument.id, "name": value.instrument.instrument_name, "experience_level": value.experience_level}
         return data
 
 
 class GenreListingField(serializers.RelatedField):
 
     def to_representation(self, value):
-        return value.genre.genre_name
+        data = {"genre": value.genre.id, "name": value.genre.genre_name}
+        return data
 
 
 # Serializer for Profile class
@@ -203,7 +204,7 @@ class UpdateUserSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'password': {'write_only': True, 'required': True}}
 
     def update(self, instance, validated_data):
-        print(validated_data)
+
         # checking if the profile object is in the request passed to the view
         if 'profile' in validated_data:
             profile_data = validated_data.pop('profile')
@@ -219,7 +220,6 @@ class UpdateUserSerializer(serializers.HyperlinkedModelSerializer):
             profile.town = profile_data.get('town', profile.town)
             profile.distance_limit = profile_data.get('distance_limit', profile.distance_limit)
             profile.save()
-            print(profile_data)
 
         # checking that instruments array was passed in the request
         if 'instruments' in validated_data:
