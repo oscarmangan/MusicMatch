@@ -218,6 +218,7 @@ class UpdateUserSerializer(serializers.HyperlinkedModelSerializer):
             profile.instagram_url = profile_data.get('instagram_url', profile.instagram_url)
             profile.music_url = profile_data.get('music_url', profile.music_url)
             profile.town = profile_data.get('town', profile.town)
+            profile.band_exp = profile_data.get('band_exp', profile.band_exp)
             profile.distance_limit = profile_data.get('distance_limit', profile.distance_limit)
             profile.save()
 
