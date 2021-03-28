@@ -130,6 +130,7 @@ def commitRecommendations(dataframe, user_id):
     # Delete any records for this user if there are any present
     user = User.objects.get(id=user_id)
     UserRecommendation.objects.filter(user=user).delete()
+    print(dataframe)
 
     # Create the new records for each recommendation
     for idx, row in dataframe.iterrows():
@@ -139,6 +140,3 @@ def commitRecommendations(dataframe, user_id):
             distance_from_user=row['distance_to_user'],
             score=row['similarity_score']
         )
-
-
-dataPreProcessing(29600)
